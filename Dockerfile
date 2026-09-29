@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 COPY models ./models
+COPY static ./static
 
 EXPOSE 8000
 

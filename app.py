@@ -1,18 +1,24 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import joblib
-import numpy as np
 
-app = FastAPI()
+app = FastAPI(title="House Price Prediction API")
 
 model = joblib.load("models/model.pkl")
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
 @app.get("/")
-def root():
-    return {"message": "House Price Prediction API is running"}
+def home():
+    return FileResponse("static/index.html")
+
 
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
 
 @app.post("/predict")
 def predict(
@@ -23,15 +29,17 @@ def predict(
     garage: float,
     location_score: float
 ):
-    data = np.array([[
+    data = [[
         sqft,
         bedrooms,
         bathrooms,
         age_years,
         garage,
         location_score
-    ]])
+    ]]
 
     prediction = model.predict(data)[0]
 
-    return {"predicted_price": float(prediction)}
+    return {
+        "predicted_price": float(prediction)
+    }
