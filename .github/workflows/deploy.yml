@@ -1,4 +1,4 @@
-name: MLOps Build and Deploy
+name: Build and Deploy MLOps
 
 on:
   push:
@@ -8,7 +8,6 @@ on:
 jobs:
 
   build-and-push:
-    name: Build and Push Docker Image
     runs-on: ubuntu-latest
 
     steps:
@@ -16,7 +15,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Login to Docker Hub
+      - name: Docker Login
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -24,37 +23,35 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/mlops-house-prediction:latest .
+          docker build \
+            -t abhi23631/mlops-house-prediction:latest .
 
       - name: Push Docker Image
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/mlops-house-prediction:latest
+          docker push \
+            abhi23631/mlops-house-prediction:latest
 
 
-  deploy:
-    name: Deploy to EC2
-    runs-on: ubuntu-latest
+  deploy-to-ec2:
     needs: build-and-push
+    runs-on: ubuntu-latest
 
     steps:
 
-      - name: Deploy on EC2
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            docker pull abhi23631/mlops-house-prediction:latest
 
-            docker pull ${{ secrets.DOCKER_USERNAME }}/mlops-house-prediction:latest
-
-            docker stop mlops-house-prediction || true
-
-            docker rm mlops-house-prediction || true
+            docker rm -f mlops-house-prediction || true
 
             docker run -d \
               --name mlops-house-prediction \
-              -p 5000:5000 \
-              ${{ secrets.DOCKER_USERNAME }}/mlops-house-prediction:latest
+              -p 8002:8000 \
+              abhi23631/mlops-house-prediction:latest
 
             docker ps
